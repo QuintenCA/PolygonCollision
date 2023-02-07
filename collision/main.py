@@ -2,57 +2,32 @@ import turtle
 import hitbox
 import time
 import math
+import line
+import polygon
 
 turtle.tracer(0, 0)
 window = turtle.Screen()
 window.setup(800, 450)
 window.listen()
 
-square1 = hitbox.Hitbox(160, 200)
-t1 = turtle.Turtle()
-t1.shape("square")
-t1.shapesize(square1.height / 20, square1.width / 20)
-t1.up()
-square1.goto(-200, 0)
-t1.goto(-200, 0)
+square2 = polygon.Polygon(8, 100)
+square2.rotation = 13
+square2.goto(0, 0)
 
-square2 = hitbox.Hitbox(80, 40)
-t2 = turtle.Turtle()
-t2.shape("square")
-t2.shapesize(square2.height / 20, square2.width / 20)
-t2.up()
-square2.goto(200, 0)
-t2.goto(200, 0)
+square1 = polygon.Polygon(3, 200)
+square1.goto(0, 300)
+square1.rotation = 0
 
-p1 = turtle.Turtle()
-p1.shape("circle")
-p1.color("blue")
-p1.shapesize(1/4)
-p1.up()
+draw = turtle.Turtle()
+draw.hideturtle()
+draw.color("orange")
 
-p2 = turtle.Turtle()
-p2.shape("circle")
-p2.color("blue")
-p2.shapesize(1/4)
-p2.up()
-
-p3 = turtle.Turtle()
-p3.shape("circle")
-p3.color("blue")
-p3.shapesize(1/4)
-p3.up()
-
-p4 = turtle.Turtle()
-p4.shape("circle")
-p4.color("blue")
-p4.shapesize(1/4)
-p4.up()
-
-hidden = turtle.Turtle()
-hidden.up()
-hidden.color("red")
-hidden.shape("circle")
-hidden.hideturtle()
+point = turtle.Turtle()
+point.up()
+point.shape("circle")
+point.color("red")
+point.shapesize(0.1)
+point.hideturtle()
 
 up = False
 down = False
@@ -110,14 +85,27 @@ def unturn_right():
 	global tright
 	tright = False
 	
-def readinfo():
-	print()
-	print(f"rotation: {square1.rotation}\n"
-	      f"position: {square1.xcor}, {square1.ycor}\n"
-	      f"p1: {square1.p1()}\n"
-	      f"p2: {square1.p2()}\n"
-	      f"p3: {square1.p3()}\n"
-	      f"p4: {square1.p4()}\n")
+def pause():
+	square1.uncollide(square2)
+	
+def show(shape, color="black"):
+	global draw
+	draw.up()
+	draw.color(color)
+	draw.goto(shape.vertices()[0])
+	draw.down()
+	
+	for i in range(len(shape.vertices())):
+		draw.goto(shape.vertices()[(i + 1) % len(shape.vertices())])
+		
+def showLine(line, color="black"):
+	global draw
+	
+	draw.up()
+	draw.color(color)
+	draw.goto(line.p1)
+	draw.down()
+	draw.goto(line.p2)
 
 window.onkeypress(go_up, "w")
 window.onkeypress(go_down, "s")
@@ -125,7 +113,7 @@ window.onkeypress(go_left, "a")
 window.onkeypress(go_right, "d")
 window.onkeypress(turn_left, "q")
 window.onkeypress(turn_right, "e")
-window.onkeypress(readinfo, "space")
+window.onkeypress(pause, "space")
 
 window.onkeyrelease(no_up, "w")
 window.onkeyrelease(no_down, "s")
@@ -134,50 +122,37 @@ window.onkeyrelease(no_right, "d")
 window.onkeyrelease(unturn_left, "q")
 window.onkeyrelease(unturn_right, "e")
 
-
+force = 1
+timestamp = time.time()
 while True:
+	while (time.time() - timestamp) < 0.01:
+		time.sleep(0.001)
+
+	timestamp = time.time()
+	
+	draw.clear()
+	show(square1)
+	show(square2)
+	
 	window.update()
+	
 	for t in window.turtles():
 		t.clearstamps()
-	time.sleep(0.01)
-	# print()
-	# print(f"rotation: {square1.rotation}\n"
-	#       f"p1: {square1.p1()}\n"
-	#       f"p2: {square1.p2()}\n"
-	#       f"p3: {square1.p3()}\n"
-	#       f"p4: {square1.p4()}\n")
-	
+
 	if up:
-		square1.goto(square1.xcor, square1.ycor + 1)
-		t1.goto(square1.center())
+		square1.goto(square1.xcor(), square1.ycor() + force)
 	if down:
-		square1.goto(square1.xcor, square1.ycor - 1)
-		t1.goto(square1.center())
+		square1.goto(square1.xcor(), square1.ycor() - force)
 	if left:
-		square1.goto(square1.xcor - 1, square1.ycor)
-		t1.goto(square1.center())
+		square1.goto(square1.xcor() - force, square1.ycor())
 	if right:
-		square1.goto(square1.xcor + 1, square1.ycor)
-		t1.goto(square1.center())
+		square1.goto(square1.xcor() + force, square1.ycor())
 	if tleft:
 		square1.rotation = (square1.rotation + 1) % 360
-		t1.left(1)
 	if tright:
 		square1.rotation = (square1.rotation - 1) % 360
-		t1.right(1)
 	
-	p1.goto(square1.p1())
-	p2.goto(square1.p2())
-	p3.goto(square1.p3())
-	p4.goto(square1.p4())
-	
-	if square1.collide(square2):
-		t1.color("red")
-	else:
-		t1.color("black")
-		
-	xsect =  square1.edge1().intersect(square2.edge1())
-	if xsect is not None:
-		hidden.goto(xsect)
-		hidden.stamp()
-	
+	impact = square1.collision(square2)
+	if impact:
+		point.goto(impact)
+		point.stamp()

@@ -1,20 +1,38 @@
 import math
 import turtle
 
+
+def round2(number):
+	return round(number * 1000000) / 1000000
+
+
 class Line:
-	def __init__(self, p1, p2):
+	def __init__(self, p1, p2, length=0):
+		self.ray = False
 		self.p1 = p1
-		self.p2 = p2
+		if length is not None and (type(p2) == int or type(p2) == float):
+			if length == 0:
+				length = 1
+				self.ray = True
+			self.p2 = (p1[0] + length * math.cos(p2), p1[1] + length * math.sin(p2))
+		else:
+			self.p2 = p2
 		
 	def intersect(self, other):
 		denominator = self.A() * other.B() - other.A() * self.B()
 		if denominator == 0:
 			return None
 		
-		x = (other.B() * self.C() - self.B() * other.C()) / denominator
-		y = (self.A() * other.C() - other.A() * self.C()) / denominator
+		x = round2((other.B() * self.C() - self.B() * other.C()) / denominator)
+		y = round2((self.A() * other.C() - other.A() * self.C()) / denominator)
 		
 		point = (x, y)
+		
+		if self.ray and Line(self.p1, point).angle() == self.angle():
+				self.p2 = point
+		
+		if other.ray and Line(other.p1, point).angle() == other.angle():
+				other.p2 = point
 		
 		if not ((self.p1[0] <= x <= self.p2[0] or self.p2[0] <= x <= self.p1[0]) and
 		        (self.p1[1] <= y <= self.p2[1] or self.p2[1] <= y <= self.p1[1])):
@@ -28,7 +46,7 @@ class Line:
 	
 	def length(self):
 		dist = math.sqrt((self.xdist() ** 2) + self.ydist() ** 2)
-		return dist
+		return round2(dist)
 	
 	def xdist(self):
 		return self.p2[0] - self.p1[0]
@@ -46,10 +64,10 @@ class Line:
 		return self.A() * self.p1[0] + self.B() * self.p1[1]
 	
 	def center(self):
-		point = (self.xdist() / 2, self.ydist() / 2)
+		point = ((self.p1[0] + self.p2[0]) / 2, (self.p1[1] + self.p2[1]) / 2)
 		return point
 	
 	def angle(self):
-		return math.atan2(self.ydist(), self.xdist())
+		return round2(math.atan2(self.ydist(), self.xdist()))
 		
 		
